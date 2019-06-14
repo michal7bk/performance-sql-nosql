@@ -5,25 +5,38 @@ import model.Adress;
 import model.Company;
 import model.Employee;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.Key;
+import org.mongodb.morphia.Morphia;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class MongoTester {
 
-    private List<Adress> adresses;
-    private List<Company> companies;
-    private List<Employee> employees;
+    private static final String DATABASE = "testdb";
+
+    private static List<Adress> adresses = new ArrayList<Adress>();
+    private static List<Company> companies = new ArrayList<Company>();
+    private static List<Employee> employees = new ArrayList<Employee>();
+    private static MongoClient mongoClient;
 
     public static void main(String[] args) throws UnknownHostException {
 
-        MongoClient mongoClient;
+        generateRandomData(1);
+        DB db = connectToDatabase();
+        populateDatabase(Employee.class, employees);
+        populateDatabase(Company.class, companies);
+        populateDatabase(Adress.class, adresses);
 
-        MongoCredential mongoCredential = MongoCredential.createScramSha1Credential("c8y-root", "admin", "c8y-root".toCharArray());
 
-        mongoClient = new MongoClient(new ServerAddress("mongodb.default.svc.cluster.local", 27017), Arrays.asList(mongoCredential));
-        DB db = mongoClient.getDB("testdb");
+//        clearDataBase(db);
+
+    }
+
+    private static void agregation(DB db) {
         DBCollection coll = db.getCollection("employee");
 
         // create the pipeline operations, first with the $match
@@ -52,51 +65,54 @@ public class MongoTester {
         for (DBObject result : output.results()) {
             System.out.println(result);
         }
+    }
 
+    private static void populateDatabase(Class clazz, List<?> data) {
+
+        Morphia morphia = new Morphia();
+        Datastore datastore = morphia.createDatastore(mongoClient, DATABASE);
+
+
+        for (Object object : data) {
+            Key<?> savedRecord = datastore.save(object);
+        }
 
     }
 
 
-//    private void populateDatabase() {
-//
-//        DBCollection employeeCollection = null;
-//        employeeCollection = db.getCollection(Employee.COLLECTION_NAME);
-//
-//        employeeCollection.save(employee);
-//
-//        System.err.println(employeeCollection.findOne());
-//    }
+    private static void generateRandomData(int numberRecords) {
+        for (int i = 0; i < numberRecords; i++) {
+            String randomAdress = RandomStringUtils.randomAlphanumeric(10);
+            Adress adress = new Adress(randomAdress, randomAdress, randomAdress);
+            String randomCompany = RandomStringUtils.randomAlphanumeric(10);
+            Company company = new Company(randomCompany, adress);
+            int randomAge = Integer.parseInt(RandomStringUtils.randomNumeric(3));
+            String randomEmployee = RandomStringUtils.randomAlphanumeric(10);
+            Employee employee = new Employee(randomEmployee, randomEmployee, randomAge, randomEmployee, adress, company);
 
-
-    private void generateRandomData() {
-        String randomAdress = RandomStringUtils.randomAlphanumeric(10);
-        String randomNumber = RandomStringUtils.randomNumeric(3);
-        Adress adress = Adress.builder()
-                .city(randomAdress)
-                .number(randomNumber)
-                .street(randomAdress)
-                .build();
-        String randomCompany = RandomStringUtils.randomAlphanumeric(10);
-        Company company = Company.builder()
-                .adress(adress)
-                .name(randomCompany)
-                .build();
-        int randomAge = Integer.parseInt(RandomStringUtils.randomNumeric(3));
-        String randomEmployee = RandomStringUtils.randomAlphanumeric(10);
-        Employee employee = Employee.builder()
-                .adress(adress)
-                .company(company)
-                .age(randomAge)
-                .gender(randomEmployee)
-                .name(randomEmployee)
-                .surname(randomEmployee)
-                .build();
-
-        employees.add(employee);
-        adresses.add(adress);
-        companies.add(company);
+            employees.add(employee);
+            adresses.add(adress);
+            companies.add(company);
+        }
     }
 
+
+    private static DB connectToDatabase() {
+        MongoCredential mongoCredential = MongoCredential.createScramSha1Credential("c8y-root", "admin", "c8y-root".toCharArray());
+        mongoClient = new MongoClient(new ServerAddress("mongodb.default.svc.cluster.local", 27017), Arrays.asList(mongoCredential));
+        DB db = mongoClient.getDB(DATABASE);
+        return db;
+    }
+
+    private static void clearDataBase(DB db) {
+        for (String string : db.getCollectionNames()) {
+            DBCollection collection = db.getCollection(string);
+            collection.drop();
+            ;
+        }
+
+
+    }
 
 }
 

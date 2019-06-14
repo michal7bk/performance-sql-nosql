@@ -1,12 +1,10 @@
 package model;
 
-import com.mongodb.BasicDBObject;
-import lombok.Builder;
-import lombok.Data;
+import org.mongodb.morphia.annotations.Entity;
 
-@Data
-@Builder
-public class Employee extends BasicDBObject {
+@Entity
+public class Employee extends BaseEntity {
+
     private Long id;
     private String name;
     private String surname;
@@ -14,4 +12,13 @@ public class Employee extends BasicDBObject {
     private String gender;
     private Adress adress;
     private Company company;
+
+    public Employee(String name, String surname, int age, String gender, Adress adress, Company company) {
+        this.name = name;
+        this.surname = surname;
+        this.age = age;
+        this.gender = gender;
+        this.adress = adress;
+        this.company = company;
+    }
 }

@@ -1,14 +1,17 @@
 package model;
 
-import com.mongodb.BasicDBObject;
-import lombok.Builder;
-import lombok.Data;
+import org.mongodb.morphia.annotations.Entity;
 
-@Data
-@Builder
-public class Adress extends BasicDBObject {
+@Entity
+public class Adress extends BaseEntity {
     private Long id;
     private String city;
     private String street;
     private String number;
+
+    public Adress(String city, String street, String number) {
+        this.city = city;
+        this.street = street;
+        this.number = number;
+    }
 }

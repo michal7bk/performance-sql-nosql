@@ -11,9 +11,17 @@ import java.util.List;
 
 public class FileUtils {
 
-    public static void writeToFileNOSQL(String text) throws IOException {
+    public static void writeToNoSqlFile(String text) throws IOException {
         List<String> lines = Arrays.asList(text);
-        Path file = Paths.get("result.txt");
+        Path file = Paths.get("resultNOSQL.txt");
         Files.write(file, lines, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
     }
+
+    public static void writeToSqlFile(String text) throws IOException {
+        List<String> lines = Arrays.asList(text);
+        Path file = Paths.get("resulSQL.txt");
+        Files.write(file, lines, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+    }
+
+
 }

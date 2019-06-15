@@ -18,25 +18,50 @@ public class PostgreTester {
     private static List<Adress> adresses = new ArrayList<>();
     private static List<Company> companies = new ArrayList<Company>();
     private static List<Employee> employees = new ArrayList<Employee>();
+    private static final int numberOfRecords = 250000;
+
 
     public static void main(String[] args) throws SQLException, IOException {
 
         Connection connection = connect();
-        generateRandomData(1000);
+        generateRandomData(numberOfRecords);
         dropTables(connection);
         createTables(connection);
         populateTables(connection);
+        agregation(connection);
+        sort(connection);
+    }
 
+
+    private static void agregation(Connection connection) throws SQLException, IOException {
+        Statement st = connection.createStatement();
+        ResultSet rs = st.executeQuery(" EXPLAIN ANALYZE SELECT Employee.id , Employee.name, Employee.surname, Company.id, Company.name " +
+                "FROM Employee " +
+                "inner join Company on Employee.companyId= Company.id " +
+                "WHERE CompanyId=10");
+        if (rs.next()) {
+            FileUtils.writeToSqlFile("Czas agregacji dla " + numberOfRecords + " rekordów " + "zajął " + rs.getString(1) + " milisekund ");
+        }
+
+    }
+
+    private static void sort(Connection connection) throws SQLException, IOException {
+        Statement st = connection.createStatement();
+        ResultSet rs = st.executeQuery("EXPLAIN ANALYZE SELECT * FROM EMPLOYEE WHERE AGE > 2 AND AGE < 612 ORDER BY AGE DESC ");
+
+        if (rs.next()) {
+            FileUtils.writeToSqlFile("Czas sortowania dla " + numberOfRecords + " rekordów " + "zajął " + rs.getString(1) + " milisekund ");
+        }
     }
 
     private static void populateTables(Connection connection) throws SQLException, IOException {
         Instant start1 = Instant.now();
         insertAdress(connection, adresses);
         Instant finish1 = Instant.now();
-        long timeElapsed1= Duration.between(start1, finish1).toMillis();
-        FileUtils.writeToSqlFile("Czas załadowania do tabeli Adres  danych o rozmiarze " + adresses.size() + " zajął " + timeElapsed1+ " milisekund ");
+        long timeElapsed1 = Duration.between(start1, finish1).toMillis();
+        FileUtils.writeToSqlFile("Czas załadowania do tabeli Adres  danych o rozmiarze " + adresses.size() + " zajął " + timeElapsed1 + " milisekund ");
 
-        Instant start2= Instant.now();
+        Instant start2 = Instant.now();
         insertCompanies(connection, companies);
         Instant finish2 = Instant.now();
         long timeElapsed2 = Duration.between(start2, finish2).toMillis();
@@ -47,7 +72,6 @@ public class PostgreTester {
         Instant finish3 = Instant.now();
         long timeElapsed3 = Duration.between(start3, finish3).toMillis();
         FileUtils.writeToSqlFile("Czas załadowania do tabeli Employee  danych o rozmiarze " + employees.size() + " zajął " + timeElapsed3 + " milisekund ");
-
 
 
     }
@@ -96,7 +120,6 @@ public class PostgreTester {
         stm.execute(sql);
     }
 
-
     private static void dropAllTable(Connection connection, String tableName) {
         try {
             Statement stm = connection.createStatement();
@@ -106,7 +129,6 @@ public class PostgreTester {
             System.out.println("Nie ma tabeli  : " + tableName);
         }
     }
-
 
     private static void insertAdress(Connection conn, List<Adress> adresses) throws SQLException {
         String SQL = "INSERT INTO Adress(city,street,number) "
@@ -154,14 +176,15 @@ public class PostgreTester {
 
     private static void generateRandomData(int numberRecords) {
         for (int i = 0; i < numberRecords; i++) {
+            long randomId = Long.parseLong(RandomStringUtils.randomNumeric(2));
             String randomAdress = RandomStringUtils.randomAlphanumeric(10);
             String randomCompany = RandomStringUtils.randomAlphanumeric(10);
             String randomNumber = RandomStringUtils.randomNumeric(5);
             Adress adress = new Adress(randomAdress, randomAdress, Long.valueOf(randomNumber));
-            Company company = new Company(randomCompany, (long) i - 1);
+            Company company = new Company(randomCompany, randomId);
             String randomEmployee = RandomStringUtils.randomAlphanumeric(10);
             int randomAge = Integer.parseInt(RandomStringUtils.randomNumeric(3));
-            Employee employee = new Employee(randomEmployee, randomEmployee, randomAge, randomEmployee, (long) i - 1, (long) i - 1);
+            Employee employee = new Employee(randomEmployee, randomEmployee, randomAge, randomEmployee, randomId, randomId);
 
             employees.add(employee);
             adresses.add(adress);
@@ -171,7 +194,7 @@ public class PostgreTester {
 
     private static Connection connect() throws SQLException {
         return DriverManager.getConnection(
-                "jdbc:postgresql://127.0.0.1:5432/testdb", "michal", "admin");
+                "jdbc:postgresql://127.0.0.1:5432/testdb?loggerLevel=TRACE&loggerFile=pgjdbc.log", "michal", "admin");
     }
 
 }

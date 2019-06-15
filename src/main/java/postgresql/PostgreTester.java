@@ -1,11 +1,15 @@
 package postgresql;
 
+import file.FileUtils;
 import model.postgre.Adress;
 import model.postgre.Company;
 import model.postgre.Employee;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.io.IOException;
 import java.sql.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,20 +19,37 @@ public class PostgreTester {
     private static List<Company> companies = new ArrayList<Company>();
     private static List<Employee> employees = new ArrayList<Employee>();
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
 
         Connection connection = connect();
-        generateRandomData(10);
+        generateRandomData(1000);
         dropTables(connection);
         createTables(connection);
         populateTables(connection);
 
     }
 
-    private static void populateTables(Connection connection) throws SQLException {
+    private static void populateTables(Connection connection) throws SQLException, IOException {
+        Instant start1 = Instant.now();
         insertAdress(connection, adresses);
+        Instant finish1 = Instant.now();
+        long timeElapsed1= Duration.between(start1, finish1).toMillis();
+        FileUtils.writeToSqlFile("Czas załadowania do tabeli Adres  danych o rozmiarze " + adresses.size() + " zajął " + timeElapsed1+ " milisekund ");
+
+        Instant start2= Instant.now();
         insertCompanies(connection, companies);
+        Instant finish2 = Instant.now();
+        long timeElapsed2 = Duration.between(start2, finish2).toMillis();
+        FileUtils.writeToSqlFile("Czas załadowania do tabeli Company  danych o rozmiarze " + companies.size() + " zajął " + timeElapsed2 + " milisekund ");
+
+        Instant start3 = Instant.now();
         insertEmployees(connection, employees);
+        Instant finish3 = Instant.now();
+        long timeElapsed3 = Duration.between(start3, finish3).toMillis();
+        FileUtils.writeToSqlFile("Czas załadowania do tabeli Employee  danych o rozmiarze " + employees.size() + " zajął " + timeElapsed3 + " milisekund ");
+
+
+
     }
 
     private static void dropTables(Connection connection) throws SQLException {

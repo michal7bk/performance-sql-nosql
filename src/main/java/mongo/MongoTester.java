@@ -1,6 +1,7 @@
 package mongo;
 
 import com.mongodb.*;
+import com.mongodb.operation.OrderBy;
 import file.FileUtils;
 import model.mongo.Adress;
 import model.mongo.Company;
@@ -20,6 +21,7 @@ import java.util.List;
 public class MongoTester {
 
     private static final String DATABASE = "testdb";
+    private static final int numberOfRecords = 1000;
 
     private static List<Adress> adresses = new ArrayList<Adress>();
     private static List<Company> companies = new ArrayList<Company>();
@@ -27,46 +29,91 @@ public class MongoTester {
     private static MongoClient mongoClient;
 
     public static void main(String[] args) throws IOException {
-        generateRandomData(1000);
+        generateRandomData(numberOfRecords);
         DB db = connectToDatabase();
+//        clearDataBase(db);
         populateDatabase(Employee.class, employees);
         populateDatabase(Company.class, companies);
         populateDatabase(Adress.class, adresses);
-        clearDataBase(db);
+        agregation(db);
+        sort(db);
 
     }
 
 
-    private static void agregation(DB db) {
-        DBCollection coll = db.getCollection("employee");
+    private static void agregation(DB db) throws IOException {
+        DBCollection coll = db.getCollection("Employee");
 
         // create the pipeline operations, first with the $match
         DBObject match = new BasicDBObject("$match",
-                new BasicDBObject("_id", 10)
+                new BasicDBObject("id", 10)
         );
 
         // build the $lookup operations
-        DBObject lookupFields = new BasicDBObject("from", "company");
+        DBObject lookupFields = new BasicDBObject("from", "Company");
         lookupFields.put("localField", "companyId");
-        lookupFields.put("foreignField", "_id");
+        lookupFields.put("foreignField", "id");
         lookupFields.put("as", "company");
         DBObject lookup = new BasicDBObject("$lookup", lookupFields);
 
         // build the $project operations
         DBObject projectFields = new BasicDBObject("name", 1);
-        projectFields.put("lastName", 1);
+        projectFields.put("surname", 1);
         projectFields.put("companyId", 1);
-        projectFields.put("companyName", "$company.companyName");
+        projectFields.put("companyName", "$company.name");
         DBObject project = new BasicDBObject("$project", projectFields);
 
         List<DBObject> pipeline = Arrays.asList(match, lookup, project);
 
+        Instant start = Instant.now();
         AggregationOutput output = coll.aggregate(pipeline);
+        Instant end = Instant.now();
+        long timeElapsed = Duration.between(start, end).toMillis();
+        FileUtils.writeToNoSqlFile("Czas agregacji dla : " + numberOfRecords + " rekordów " + "zajął " + timeElapsed + " milisekund ");
 
-        for (DBObject result : output.results()) {
-            System.out.println(result);
+//        for (DBObject result : output.results()) {
+//            System.out.println(result);
+//        }
+    }
+
+    private static void sort(DB db) throws IOException {
+        DBCollection collection = db.getCollection("Employee");
+        BasicDBObject getQuery = new BasicDBObject();
+        getQuery.put("age", new BasicDBObject("$gt", 2).append("$lt", 612));
+        Instant start = Instant.now();
+        DBCursor cursor = collection.find(getQuery).sort(new BasicDBObject("age", OrderBy.DESC.getIntRepresentation()));
+        Instant end = Instant.now();
+        long timeElapsed = Duration.between(start, end).toMillis();
+        FileUtils.writeToNoSqlFile("Czas sortowania dla : " + numberOfRecords + " rekordów " + "zajął " + timeElapsed + " milisekund ");
+
+
+        }
+
+    /*
+    * pipeline = [
+    {
+        "$match": {
+            "id": employeeId
+        }
+    },
+    {
+        "$lookup": {
+            "from": "company",
+            "localField": "companyId",
+            "foreignField": "id",
+            "as": "company"
+        }
+    },
+    {
+        "$project": {
+            "name": 1,
+            "lastName": 1,
+            "companyId": 1,
+            "companyName": "$company.companyName"
         }
     }
+];
+db.employee.aggregate(pipeline);*/
 
     private static void populateDatabase(Class clazz, List<?> data) throws IOException {
 
@@ -78,19 +125,20 @@ public class MongoTester {
         }
         Instant finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toMillis();
-        FileUtils.writeToFileNOSQL("Czas załadowania do tabeli " + clazz + "  danych o rozmiarze " + data.size() + " zajął " + timeElapsed + " milisekund ");
+        FileUtils.writeToNoSqlFile("Czas załadowania do tabeli " + clazz + "  danych o rozmiarze " + data.size() + " zajął " + timeElapsed + " milisekund ");
 
     }
 
     private static void generateRandomData(int numberRecords) {
-        for (int i = 0; i < numberRecords; i++) {
+        for (long i = 0; i < numberRecords; i++) {
             String randomAdress = RandomStringUtils.randomAlphanumeric(10);
-            Adress adress = new Adress(randomAdress, randomAdress, randomAdress);
+            long randomId = Long.parseLong(RandomStringUtils.randomNumeric(2));
+            Adress adress = new Adress(randomId, randomAdress, randomAdress, randomAdress);
             String randomCompany = RandomStringUtils.randomAlphanumeric(10);
-            Company company = new Company(randomCompany, adress);
+            Company company = new Company(randomId, randomCompany, randomId);
             int randomAge = Integer.parseInt(RandomStringUtils.randomNumeric(3));
             String randomEmployee = RandomStringUtils.randomAlphanumeric(10);
-            Employee employee = new Employee(randomEmployee, randomEmployee, randomAge, randomEmployee, adress, company);
+            Employee employee = new Employee(randomId, randomEmployee, randomEmployee, randomAge, randomEmployee, randomId, randomId);
 
             employees.add(employee);
             adresses.add(adress);

@@ -10,15 +10,16 @@ public class Employee extends BaseEntity {
     private String surname;
     private int age;
     private String gender;
-    private Adress adress;
-    private Company company;
+    private Long adressId;
+    private Long companyId;
 
-    public Employee(String name, String surname, int age, String gender, Adress adress, Company company) {
+    public Employee(Long id, String name, String surname, int age, String gender, Long adress, Long company) {
+        this.id = id;
         this.name = name;
         this.surname = surname;
         this.age = age;
         this.gender = gender;
-        this.adress = adress;
-        this.company = company;
+        this.adressId = adress;
+        this.companyId = company;
     }
 }

@@ -6,10 +6,11 @@ import org.mongodb.morphia.annotations.Entity;
 public class Company extends BaseEntity {
     private Long id;
     private String name;
-    private Adress adress;
+    private Long adressId;
 
-    public Company(String name, Adress adress) {
+    public Company(Long id, String name, long adress) {
+        this.id = id;
         this.name = name;
-        this.adress = adress;
+        this.adressId = adress;
     }
 }

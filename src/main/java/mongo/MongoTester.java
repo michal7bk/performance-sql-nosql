@@ -1,6 +1,7 @@
 package mongo;
 
 import com.mongodb.*;
+import file.FileUtils;
 import model.mongo.Adress;
 import model.mongo.Company;
 import model.mongo.Employee;
@@ -9,6 +10,9 @@ import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.Morphia;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,18 +26,16 @@ public class MongoTester {
     private static List<Employee> employees = new ArrayList<Employee>();
     private static MongoClient mongoClient;
 
-    public static void main(String[] args) {
-
-        generateRandomData(1);
+    public static void main(String[] args) throws IOException {
+        generateRandomData(1000);
         DB db = connectToDatabase();
         populateDatabase(Employee.class, employees);
         populateDatabase(Company.class, companies);
         populateDatabase(Adress.class, adresses);
-
-
-//        clearDataBase(db);
+        clearDataBase(db);
 
     }
+
 
     private static void agregation(DB db) {
         DBCollection coll = db.getCollection("employee");
@@ -66,18 +68,19 @@ public class MongoTester {
         }
     }
 
-    private static void populateDatabase(Class clazz, List<?> data) {
+    private static void populateDatabase(Class clazz, List<?> data) throws IOException {
 
         Morphia morphia = new Morphia();
         Datastore datastore = morphia.createDatastore(mongoClient, DATABASE);
-
-
+        Instant start = Instant.now();
         for (Object object : data) {
             Key<?> savedRecord = datastore.save(object);
         }
+        Instant finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        FileUtils.writeToFileNOSQL("Czas załadowania do tabeli " + clazz + "  danych o rozmiarze " + data.size() + " zajął " + timeElapsed + " milisekund ");
 
     }
-
 
     private static void generateRandomData(int numberRecords) {
         for (int i = 0; i < numberRecords; i++) {

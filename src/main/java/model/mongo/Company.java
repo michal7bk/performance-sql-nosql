@@ -1,4 +1,4 @@
-package model;
+package model.mongo;
 
 import org.mongodb.morphia.annotations.Entity;
 

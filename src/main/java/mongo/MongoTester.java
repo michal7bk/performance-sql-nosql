@@ -1,15 +1,14 @@
 package mongo;
 
 import com.mongodb.*;
-import model.Adress;
-import model.Company;
-import model.Employee;
+import model.mongo.Adress;
+import model.mongo.Company;
+import model.mongo.Employee;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.Morphia;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +22,7 @@ public class MongoTester {
     private static List<Employee> employees = new ArrayList<Employee>();
     private static MongoClient mongoClient;
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) {
 
         generateRandomData(1);
         DB db = connectToDatabase();
